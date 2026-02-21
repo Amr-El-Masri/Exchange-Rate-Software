@@ -29,9 +29,11 @@ CORS(app)
 from route.auth_route import auth_bp
 from route.transaction_route import transactions_bp
 from route.analytics_route import analytics_bp
+from route.marketplace_route import marketplace_bp
 app.register_blueprint(auth_bp)
 app.register_blueprint(transactions_bp)
 app.register_blueprint(analytics_bp)
+app.register_blueprint(marketplace_bp)
     
 if __name__ == "__main__":
     app.run(debug=False)
