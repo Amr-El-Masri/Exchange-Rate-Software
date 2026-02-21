@@ -39,7 +39,7 @@ def create_offer():
     )
     db.session.add(offer)
     db.session.commit()
-    return jsonify(offer_schema.dump(offer)), 201#?????????
+    return jsonify(offer_schema.dump(offer))
 
 #view/browse available offers 
 @marketplace_bp.route('/market/offers', methods=['GET'])
