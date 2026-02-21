@@ -28,8 +28,10 @@ CORS(app)
 #get the blueprint objects defined in the route files and plug them into the app
 from route.auth_route import auth_bp
 from route.transaction_route import transactions_bp
+from route.analytics_route import analytics_bp
 app.register_blueprint(auth_bp)
 app.register_blueprint(transactions_bp)
+app.register_blueprint(analytics_bp)
     
 if __name__ == "__main__":
     app.run(debug=False)
