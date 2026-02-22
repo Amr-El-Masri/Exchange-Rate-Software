@@ -37,6 +37,7 @@ from route.admin_route import admin_bp
 from route.audit_route import audit_bp
 from route.notification_route import notifications_bp
 from route.reports_route import reports_bp
+from route.backup_route import backup_bp
 app.register_blueprint(auth_bp)
 app.register_blueprint(transactions_bp)
 app.register_blueprint(analytics_bp)
@@ -48,6 +49,7 @@ app.register_blueprint(admin_bp)
 app.register_blueprint(audit_bp)
 app.register_blueprint(notifications_bp)
 app.register_blueprint(reports_bp)
+app.register_blueprint(backup_bp)
     
 if __name__ == "__main__":
     app.run(debug=False)
