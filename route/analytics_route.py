@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 import datetime
 from model.transaction import Transaction
+from model.transaction import Transaction, transactions_schema
 
 analytics_bp= Blueprint('analytics', __name__)
 
@@ -125,4 +126,41 @@ def get_exchange_rate_history():
         "data": hist
     })
 
-    
+@analytics_bp.route('/admin/data_quality', methods=['GET'])
+def get_data_quality():
+    #import here to avoid circular imports
+    #for example here, analytics_route.py imports from model/user.py, and
+    # if model/user.py (or something it imports) in turn imports from analytics_route.py,
+    from model.user import User
+    import jwt
+    from service.auth_service import extract_auth_token, decode_token
+    from flask import abort
+
+    #require being an admin for this endpoint
+    token = extract_auth_token(request)
+    if not token:
+        abort(401)
+    try:
+        user_id = decode_token(token)
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+        abort(401)
+    user = User.query.get(user_id)
+    if not user or user.role != 'ADMIN':
+        abort(403)
+
+    #get all transactions grouped by source
+    internal_count = Transaction.query.filter_by(source='internal').count()
+    external_count = Transaction.query.filter_by(source='external').count()
+    outlier_count = Transaction.query.filter_by(is_outlier=True).count()
+    total_count = Transaction.query.count()
+
+    #get recent outliers for review
+    outliers = Transaction.query.filter_by(is_outlier=True).order_by(Transaction.added_date.desc()).all()
+
+    return jsonify({
+        "total_transactions": total_count,
+        "internal_transactions": internal_count,
+        "external_transactions": external_count,
+        "outlier_count": outlier_count,
+        "outliers": transactions_schema.dump(outliers)
+    })

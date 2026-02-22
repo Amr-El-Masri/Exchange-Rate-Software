@@ -9,6 +9,8 @@ import io
 from service.audit_service import log_event
 from service.notification_service import check_and_notify
 
+outlier_threshold = 0.5
+
 transactions_bp= Blueprint('transactions', __name__)
 
 def get_current_user():
@@ -20,6 +22,25 @@ def get_current_user():
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         abort(401)
 
+def is_outlier_rate(usd_amount, lbp_amount, usd_to_lbp):
+    #get the recent average rate for comparison
+    end_date = datetime.datetime.now()
+    start_date = end_date - datetime.timedelta(hours=72)
+    recent_txns = Transaction.query.filter(
+        Transaction.added_date.between(start_date, end_date),
+        Transaction.usd_to_lbp == usd_to_lbp,
+        Transaction.is_outlier == False
+    ).all()
+
+    if not recent_txns:
+        return False  #in case there is no baseline to compare against
+
+    avg_rate = sum(t.lbp_amount / t.usd_amount for t in recent_txns) / len(recent_txns)
+    new_rate = lbp_amount / usd_amount
+    deviation = abs(new_rate - avg_rate) / avg_rate
+
+    return deviation > outlier_threshold #defined above as 0.5, meaning we flag when a rate deviates more than 50% from the recent average
+
 #the three routes below are the ones already implemented in labs 1 and 2
 @transactions_bp.route('/transaction', methods=['POST'])
 @limiter.limit("10 per minute")
@@ -28,12 +49,16 @@ def add_transaction():
     usd_amount = float(request.json.get("usd_amount", 0))
     lbp_amount = float(request.json.get("lbp_amount", 0))
     usd_to_lbp = request.json.get("usd_to_lbp")
+    source = request.json.get("source", "internal")
+
     if usd_amount<=0:
         return jsonify({"error": "Invalid usd_amount"}), 400
     if lbp_amount<=0:
         return jsonify({"error": "Invalid lbp_amount"}), 400
     if usd_to_lbp not in [True, False]:
         return jsonify({"error": "Invalid usd_to_lbp value"}), 400
+    if source not in ['internal', 'external']:
+        return jsonify({"error": "source must be 'internal' or 'external'"}), 400
     
     token = extract_auth_token(request)
     if token:
@@ -43,11 +68,30 @@ def add_transaction():
             
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
             abort(403)
+
+    #check if this transac is an outlier
+    outlier = is_outlier_rate(usd_amount, lbp_amount, usd_to_lbp)
+    transaction = Transaction(usd_amount, lbp_amount, usd_to_lbp, user_id, source)
+    transaction.is_outlier = outlier  # just flag it
+    db.session.add(transaction)
+    db.session.commit()
+
+    if outlier:
+        return jsonify({
+            "warning": "Transaction saved but flagged as outlier — rate deviates significantly from recent average",
+            "transaction": transaction_schema.dump(transaction)
+        }) 
+    
+    #in the above we simply flag the transaction and add it, if we want to reject it instead, we can use the below:
+    # outlier = is_outlier_rate(usd_amount, lbp_amount, usd_to_lbp)
+    # if outlier:
+    #     return jsonify({"error": "Transaction rate flagged as outlier..."}), 400
+
     transaction= Transaction(float(usd_amount), float(lbp_amount), bool(usd_to_lbp), user_id)
     db.session.add(transaction)
     db.session.commit()
-    check_and_notify(db.session)
     log_event('TRANSACTION_CREATED', f"Transaction created: {usd_amount} USD / {lbp_amount} LBP", user_id=user_id)
+    check_and_notify(db.session)
     return jsonify(transaction_schema.dump(transaction))
 
 @transactions_bp.route('/transaction', methods=['GET'])
