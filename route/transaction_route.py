@@ -115,11 +115,13 @@ def get_exchange_rate():
     usd_to_lbp_transactions = Transaction.query.filter(
         Transaction.added_date.between(start_date, end_date),
         Transaction.usd_to_lbp == True
+        Transaction.is_outlier == False  #exclude outliers (extreme transactions) so they dont ruin the avg rate
     ).all()
 
     lbp_to_usd_transactions = Transaction.query.filter(
         Transaction.added_date.between(start_date, end_date),
         Transaction.usd_to_lbp == False
+        Transaction.is_outlier == False#also exclude outliers
     ).all()
 
     avg_usd_to_lbp = None

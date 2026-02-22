@@ -17,6 +17,11 @@ def add_user():
     if not user_name or not password:
         return jsonify ({"error": "username and password required"}), 400
 
+    #check for duplicate usernames
+    existing = User.query.filter_by(user_name=user_name).first()
+    if existing:
+        return jsonify({"error": "Username already taken"}), 400
+    
     user= User(user_name=user_name, password=password)
     db.session.add(user)
     db.session.commit()
