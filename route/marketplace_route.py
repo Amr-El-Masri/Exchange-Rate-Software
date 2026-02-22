@@ -72,14 +72,20 @@ def accept_offer(offer_id):
     if offer.user_id == user_id:
         return jsonify({"error": "You can't accept your own offer"}), 400
 
-    offer.status = 'accepted'
-    offer.accepted_by = user_id
-    offer.accepted_at = datetime.datetime.now()
-    db.session.commit()
-    send_notification(db.session, offer.user_id, "Offer Accepted", f"Your offer #{offer.id} has been accepted")
-    send_notification(db.session, user_id, "Trade Completed", f"You successfully accepted offer #{offer.id}")
-    check_and_notify(db.session)
-    log_event('OFFER_ACCEPTED', f"Offer {offer_id} accepted", user_id=user_id)
+    try:
+        offer.status = 'accepted'
+        offer.accepted_by = user_id
+        offer.accepted_at = datetime.datetime.now()
+        db.session.commit()
+        send_notification(db.session, offer.user_id, "Offer Accepted", f"Your offer #{offer.id} has been accepted")
+        send_notification(db.session, user_id, "Trade Completed", f"You successfully accepted offer #{offer.id}")
+        check_and_notify(db.session)
+        log_event('OFFER_ACCEPTED', f"Offer {offer_id} accepted", user_id=user_id)
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": "Could not accept offer, please try again"}), 500
+
     return jsonify(offer_schema.dump(offer))
 
 #cancel/delete offer

@@ -64,7 +64,6 @@ def add_transaction():
     if token:
         try:
             user_id=decode_token(token)
-            print(user_id)
             
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
             abort(403)
@@ -73,12 +72,18 @@ def add_transaction():
     outlier = is_outlier_rate(usd_amount, lbp_amount, usd_to_lbp)
     transaction = Transaction(usd_amount, lbp_amount, usd_to_lbp, user_id, source)
     transaction.is_outlier = outlier  # just flag it
-    db.session.add(transaction)
-    db.session.commit()
+    try:
+        db.session.add(transaction)
+        db.session.commit()
+        log_event('TRANSACTION_CREATED', f"Transaction created: {usd_amount} USD / {lbp_amount} LBP", user_id=user_id)
+        check_and_notify(db.session)
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": "Transaction failed, please try again"}), 500
 
     if outlier:
         return jsonify({
-            "warning": "Transaction saved but flagged as outlier — rate deviates significantly from recent average",
+            "warning": "Transaction saved but flagged as outlier: rate deviates significantly from recent average",
             "transaction": transaction_schema.dump(transaction)
         }) 
     
@@ -87,11 +92,6 @@ def add_transaction():
     # if outlier:
     #     return jsonify({"error": "Transaction rate flagged as outlier..."}), 400
 
-    transaction= Transaction(float(usd_amount), float(lbp_amount), bool(usd_to_lbp), user_id)
-    db.session.add(transaction)
-    db.session.commit()
-    log_event('TRANSACTION_CREATED', f"Transaction created: {usd_amount} USD / {lbp_amount} LBP", user_id=user_id)
-    check_and_notify(db.session)
     return jsonify(transaction_schema.dump(transaction))
 
 @transactions_bp.route('/transaction', methods=['GET'])
