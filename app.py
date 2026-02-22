@@ -31,11 +31,13 @@ from route.transaction_route import transactions_bp
 from route.analytics_route import analytics_bp
 from route.marketplace_route import marketplace_bp
 from route.alert_route import alerts_bp
+from route.watchlist_route import watchlist_bp
 app.register_blueprint(auth_bp)
 app.register_blueprint(transactions_bp)
 app.register_blueprint(analytics_bp)
 app.register_blueprint(marketplace_bp)
 app.register_blueprint(alerts_bp)
+app.register_blueprint(watchlist_bp)
     
 if __name__ == "__main__":
     app.run(debug=False)
