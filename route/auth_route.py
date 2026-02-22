@@ -32,5 +32,10 @@ def authenticate():
         abort(403)
     if not bcrypt.check_password_hash(user.hashed_password, password):
         abort(403)
+    
+    #if the user is banned or suspended, let them know and dont give them a token (dont autherize them to access the functionalities)
+    if user.status in ['suspended', 'banned']:
+        return jsonify({"error": f"Account is {user.status}"}), 403
+
     token=create_token(user.id)
     return jsonify({"token": token})

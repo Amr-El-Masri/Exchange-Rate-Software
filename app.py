@@ -33,6 +33,7 @@ from route.marketplace_route import marketplace_bp
 from route.alert_route import alerts_bp
 from route.watchlist_route import watchlist_bp
 from route.preference_route import preferences_bp
+from route.admin_route import admin_bp
 app.register_blueprint(auth_bp)
 app.register_blueprint(transactions_bp)
 app.register_blueprint(analytics_bp)
@@ -40,6 +41,7 @@ app.register_blueprint(marketplace_bp)
 app.register_blueprint(alerts_bp)
 app.register_blueprint(watchlist_bp)
 app.register_blueprint(preferences_bp)
+app.register_blueprint(admin_bp)
     
 if __name__ == "__main__":
     app.run(debug=False)
