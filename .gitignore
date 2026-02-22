@@ -6,3 +6,4 @@ __pycache__/
 **/.idea/workspace.xml
 **/.idea/usage.statistics.xml
 db_config.py
+exchange_platform_backup.sql

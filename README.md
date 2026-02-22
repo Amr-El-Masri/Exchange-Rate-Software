@@ -259,6 +259,7 @@ CREATE TABLE backup_record (
 Option 2:
 in the terminal type the following for each table you want to create(example here we create user table):
 
+```
 python
 >>> from app import app    
 >>> from extensions import db
@@ -267,6 +268,7 @@ python
 ...     db.create_all()
 ...
 >>> exit()
+```
 
 ### Step 3: Create your first admin user
 
