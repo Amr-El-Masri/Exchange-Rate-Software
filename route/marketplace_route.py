@@ -5,6 +5,7 @@ from extensions import db, limiter
 from model.offer import Offer, offer_schema, offers_schema
 from service.auth_service import extract_auth_token, decode_token
 from service.audit_service import log_event
+from service.notification_service import check_and_notify, send_notification
 
 marketplace_bp=Blueprint('marketplace', __name__)
 
@@ -75,6 +76,9 @@ def accept_offer(offer_id):
     offer.accepted_by = user_id
     offer.accepted_at = datetime.datetime.now()
     db.session.commit()
+    send_notification(db.session, offer.user_id, "Offer Accepted", f"Your offer #{offer.id} has been accepted")
+    send_notification(db.session, user_id, "Trade Completed", f"You successfully accepted offer #{offer.id}")
+    check_and_notify(db.session)
     log_event('OFFER_ACCEPTED', f"Offer {offer_id} accepted", user_id=user_id)
     return jsonify(offer_schema.dump(offer))
 
@@ -93,6 +97,7 @@ def cancel_offer(offer_id):
 
     offer.status = 'canceled'
     db.session.commit()
+    send_notification(db.session, user_id, "Offer Canceled", f"Your offer #{offer_id} has been canceled")
     log_event('OFFER_CANCELED', f"Offer {offer_id} canceled", user_id=user_id)
     return jsonify({"message": "Offer canceled successfully", "offer": offer_schema.dump(offer)})
 
