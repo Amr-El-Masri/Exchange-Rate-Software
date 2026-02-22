@@ -4,6 +4,7 @@ import datetime
 from extensions import db, limiter
 from model.offer import Offer, offer_schema, offers_schema
 from service.auth_service import extract_auth_token, decode_token
+from service.audit_service import log_event
 
 marketplace_bp=Blueprint('marketplace', __name__)
 
@@ -39,6 +40,7 @@ def create_offer():
     )
     db.session.add(offer)
     db.session.commit()
+    log_event('OFFER_CREATED', f"Offer created: {usd_amount} USD / {lbp_amount} LBP", user_id=user_id)
     return jsonify(offer_schema.dump(offer))
 
 #view/browse available offers 
@@ -73,6 +75,7 @@ def accept_offer(offer_id):
     offer.accepted_by = user_id
     offer.accepted_at = datetime.datetime.now()
     db.session.commit()
+    log_event('OFFER_ACCEPTED', f"Offer {offer_id} accepted", user_id=user_id)
     return jsonify(offer_schema.dump(offer))
 
 #cancel/delete offer
@@ -90,6 +93,7 @@ def cancel_offer(offer_id):
 
     offer.status = 'canceled'
     db.session.commit()
+    log_event('OFFER_CANCELED', f"Offer {offer_id} canceled", user_id=user_id)
     return jsonify({"message": "Offer canceled successfully", "offer": offer_schema.dump(offer)})
 
 #view personal trade history

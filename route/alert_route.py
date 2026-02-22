@@ -5,6 +5,7 @@ from extensions import db
 from model.alert import Alert, alert_schema, alerts_schema
 from model.transaction import Transaction
 from service.auth_service import extract_auth_token, decode_token
+from service.audit_service import log_event
 
 alerts_bp=Blueprint('alerts', __name__)
 
@@ -42,6 +43,7 @@ def create_alert():
     )
     db.session.add(alert)
     db.session.commit()
+    log_event('ALERT_CREATED', f"Alert created: {direction} {threshold}", user_id=user_id)
     return jsonify(alert_schema.dump(alert))
 
 #view ur own alerts
@@ -65,6 +67,7 @@ def delete_alert(alert_id):
 
     db.session.delete(alert)
     db.session.commit()
+    log_event('ALERT_DELETED', f"Alert {alert_id} deleted", user_id=user_id)
     return jsonify({"message": "Alert deleted successfully"})
 
 #check which alerts have been trigered

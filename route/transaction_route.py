@@ -6,6 +6,7 @@ from model.transaction import Transaction, transaction_schema, transactions_sche
 from service.auth_service import extract_auth_token, decode_token
 import csv
 import io
+from service.audit_service import log_event
 
 transactions_bp= Blueprint('transactions', __name__)
 
@@ -44,6 +45,7 @@ def add_transaction():
     transaction= Transaction(float(usd_amount), float(lbp_amount), bool(usd_to_lbp), user_id)
     db.session.add(transaction)
     db.session.commit()
+    log_event('TRANSACTION_CREATED', f"Transaction created: {usd_amount} USD / {lbp_amount} LBP", user_id=user_id)
     return jsonify(transaction_schema.dump(transaction))
 
 @transactions_bp.route('/transaction', methods=['GET'])

@@ -4,6 +4,7 @@ import datetime
 from extensions import db
 from model.preference import Preference, preference_schema
 from service.auth_service import extract_auth_token, decode_token
+from service.audit_service import log_event
 
 preferences_bp = Blueprint('preferences', __name__)
 
@@ -44,6 +45,7 @@ def create_preferences():
 
     db.session.add(preferences)
     db.session.commit()
+    log_event('PREFERENCES_CREATED', f"Preferences created for user {user_id}", user_id=user_id)
     return jsonify(preference_schema.dump(preferences))
 
 #view ur prefs
@@ -88,6 +90,7 @@ def update_preferences():
 
     preference.updated_at = datetime.datetime.now()
     db.session.commit()
+    log_event('PREFERENCES_UPDATED', f"Preferences updated for user {user_id}", user_id=user_id)
     return jsonify(preference_schema.dump(preference))
 
 #delete prefs (restore them back to defaults)
@@ -101,4 +104,5 @@ def reset_preferences():
 
     db.session.delete(preference)
     db.session.commit()
+    log_event('PREFERENCES_RESET', f"Preferences reset for user {user_id}", user_id=user_id)
     return jsonify({"message": "Preferences reset to defaults successfully"})
