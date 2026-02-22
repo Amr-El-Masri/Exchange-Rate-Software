@@ -60,7 +60,7 @@ def get_available_offers():
 
 #accept offer      
 @marketplace_bp.route('/market/offers/<int:offer_id>/accept', methods=['POST'])
-@limiter.limit("10 per minute")
+@limiter.limit("5 per minute")#note: this automatically returns the 429 error too many requests
 def accept_offer(offer_id):
     user_id = get_current_user()
     offer = Offer.query.get(offer_id)

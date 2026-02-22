@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, abort
-from extensions import db, bcrypt
+from extensions import db, bcrypt, limiter
 from model.user import User, user_schema
 from service.auth_service import create_token
 from service.audit_service import log_event
@@ -24,6 +24,7 @@ def add_user():
     return jsonify(user_schema.dump(user))
 #the authentication route done in lab1 and 2
 @auth_bp.route('/authentication', methods=['POST'])
+@limiter.limit("5 per minute")#note: this automatically returns the 429 error too many requests
 def authenticate():
     user_name= request.json.get("user_name")
     password= request.json.get("password")

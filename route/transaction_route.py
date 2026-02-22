@@ -43,7 +43,7 @@ def is_outlier_rate(usd_amount, lbp_amount, usd_to_lbp):
 
 #the three routes below are the ones already implemented in labs 1 and 2
 @transactions_bp.route('/transaction', methods=['POST'])
-@limiter.limit("10 per minute")
+@limiter.limit("5 per minute")#note: this automatically returns the 429 error too many requests
 def add_transaction():
     user_id = None
     usd_amount = float(request.json.get("usd_amount", 0))
